@@ -11,15 +11,6 @@
 #define GSM_RX_pin    15
 #define GSM_POWER_pin 9
 
-#define MOVE_EXT_AV_pin A9
-#define MOVE_ENTRY_pin A13
-#define MOVE_CORRIDOR_pin A14
-#define MOVE_DINING_pin A15
-#define MOVE_PORTE_GARAGE_pin A12
-#define MOVE_EXT_PERG_pin A11
-#define MOVE_EXT_SAM_pin A10
-
-#define BUZZER_pin 17
 #define CMD_pin 16
 
 /* *****************************
@@ -34,13 +25,6 @@ uint32_t gprs_checkPowerUp_counter = 0;
 uint16_t cmd_nb = 0;
 bool cmd_current = false;
 bool cmd_previous = false;
-#define DETECTOR_NB_MAX 1000
-uint16_t detector_nb = 0;
-bool detector_bool = false;
-bool alarm_started = false;
-bool alarm_triggered = false;
-
-uint32_t alarm_time = 0;
 
 /* *****************************
  *  Debug Macros
@@ -95,15 +79,6 @@ void setup() {
   pinMode(GSM_POWER_pin, OUTPUT);
   digitalWrite(GSM_POWER_pin, LOW);
 
-  pinMode(MOVE_EXT_AV_pin, INPUT);
-  pinMode(MOVE_ENTRY_pin, INPUT_PULLUP);
-  pinMode(MOVE_CORRIDOR_pin, INPUT_PULLUP);
-  pinMode(MOVE_DINING_pin, INPUT_PULLUP);
-  pinMode(MOVE_PORTE_GARAGE_pin, INPUT_PULLUP);
-  pinMode(MOVE_EXT_SAM_pin, INPUT_PULLUP);
-  pinMode(MOVE_EXT_PERG_pin, INPUT_PULLUP);
-
-  pinMode(BUZZER_pin, OUTPUT);
   pinMode(CMD_pin, INPUT_PULLUP);
 
   /* ****************************
@@ -144,114 +119,19 @@ void loop() {
   else {
     cmd_current = false;
   }
-  /*
-  ALARM_PRINT( Serial.print("-ExtAV    : "); Serial.println(digitalRead(MOVE_EXT_AV_pin)); )
-  ALARM_PRINT( Serial.print("-Entry    : "); Serial.println(digitalRead(MOVE_ENTRY_pin)); )
-  ALARM_PRINT( Serial.print("-Corridor : "); Serial.println(digitalRead(MOVE_CORRIDOR_pin)); )
-  ALARM_PRINT( Serial.print("-Dining   : "); Serial.println(digitalRead(MOVE_DINING_pin)); )
-  ALARM_PRINT( Serial.print("-PorteGar : "); Serial.println(digitalRead(MOVE_PORTE_GARAGE_pin)); )
-  ALARM_PRINT( Serial.print("-ExtSaM   : "); Serial.println(!digitalRead(MOVE_EXT_SAM_pin)); )
-  ALARM_PRINT( Serial.print("-ExtPerg  : "); Serial.println(!digitalRead(MOVE_EXT_PERG_pin)); )
-  */
-
-  if((HIGH == digitalRead(MOVE_EXT_AV_pin)) \
-  || (HIGH == digitalRead(MOVE_ENTRY_pin)) \
-  || (HIGH == digitalRead(MOVE_CORRIDOR_pin)) \
-  || (HIGH == digitalRead(MOVE_DINING_pin)) \
-  || (HIGH == digitalRead(MOVE_PORTE_GARAGE_pin)) \
-  || (LOW == digitalRead(MOVE_EXT_SAM_pin)) \
-  || (LOW == digitalRead(MOVE_EXT_PERG_pin))) {
-    if(detector_nb < DETECTOR_NB_MAX) { detector_nb++; }
-  }
-  else {
-    if(0 < detector_nb) { detector_nb--; }
-  }
-  if(detector_nb > DETECTOR_NB_MAX / 2) {
-    detector_bool = true;
-  }
-  else {
-    detector_bool = false;
-  }
 
   if(true == cmd_current) {
     if(false == cmd_previous) {
       ALARM_PRINT( Serial.println("Alarm ON"); )
-      //digitalWrite(BUZZER_pin, HIGH);
-      delay(200);
-      digitalWrite(BUZZER_pin, LOW);
-      alarm_triggered = false;
+      ALARM_PRINT( Serial.print("Sending SMS..."); )
+      if(true == gprs.sendSMS("0602732751", msg)) {
+        ALARM_PRINT( Serial.println("OK"); )
+      }
+      else {
+        ALARM_PRINT( Serial.println("ERROR"); )
+      }
     }
     cmd_previous = true;
-
-    if(true == detector_bool) {
-      if(true == alarm_started) {
-        if(false == alarm_triggered) {
-          ALARM_PRINT( Serial.print("ExtAV    : "); Serial.println(digitalRead(MOVE_EXT_AV_pin)); )
-          ALARM_PRINT( Serial.print("Entry    : "); Serial.println(digitalRead(MOVE_ENTRY_pin)); )
-          ALARM_PRINT( Serial.print("Corridor : "); Serial.println(digitalRead(MOVE_CORRIDOR_pin)); )
-          ALARM_PRINT( Serial.print("Dining   : "); Serial.println(digitalRead(MOVE_DINING_pin)); )
-          ALARM_PRINT( Serial.print("PorteGar : "); Serial.println(digitalRead(MOVE_PORTE_GARAGE_pin)); )
-          ALARM_PRINT( Serial.print("ExtSaM   : "); Serial.println(!digitalRead(MOVE_EXT_SAM_pin)); )
-          ALARM_PRINT( Serial.print("ExtPerg  : "); Serial.println(!digitalRead(MOVE_EXT_PERG_pin)); )
-
-          char msg[sizeof(MSG_ALERT)+10] = {0};
-          memset(msg, 0, sizeof(msg));
-          strcpy(msg, MSG_ALERT);
-          if(HIGH == digitalRead(MOVE_EXT_AV_pin)) { strcat(msg, "ExtAV"); }
-          else if(HIGH == digitalRead(MOVE_ENTRY_pin)) { strcat(msg, "Entree"); }
-          else if(HIGH == digitalRead(MOVE_CORRIDOR_pin)) { strcat(msg, "Corridor"); }
-          else if(HIGH == digitalRead(MOVE_DINING_pin)) { strcat(msg, "Salon"); }
-          else if(HIGH == digitalRead(MOVE_PORTE_GARAGE_pin)) { strcat(msg, "PorteGar"); }
-          else if(LOW == digitalRead(MOVE_EXT_SAM_pin)) { strcat(msg, "ExtSaM"); }
-          else if(LOW == digitalRead(MOVE_EXT_PERG_pin)) { strcat(msg, "ExtPerg"); }
-          ALARM_PRINT( Serial.println(msg); )
-
-          digitalWrite(BUZZER_pin, HIGH);
-          ALARM_PRINT( Serial.print("Sending SMS..."); )
-          if(true == gprs.sendSMS("0602732751", msg)) {
-            ALARM_PRINT( Serial.println("OK"); )
-          }
-          else {
-            ALARM_PRINT( Serial.println("ERROR"); )
-          }
-        }
-        alarm_triggered = true;
-      }
-    }
-    else {
-      if(false == alarm_started) {
-        ALARM_PRINT( Serial.println("Alarm detection started"); )
-      }
-      alarm_started = true;
-    }
-  }
-  else {
-    if(true == cmd_previous) {
-      ALARM_PRINT( Serial.println("Alarm OFF"); )
-    }
-    digitalWrite(BUZZER_pin, LOW);
-    cmd_previous = false;
-    alarm_started = false;
-    alarm_triggered = false;
-  }
-  if(true == alarm_triggered) {
-    if(alarm_time < 500000) {
-      digitalWrite(BUZZER_pin, HIGH);
-      if(alarm_time == 0) {
-        ALARM_PRINT( Serial.println("Buzzer ON"); )
-      }
-      alarm_time++;
-    }
-    else {
-      digitalWrite(BUZZER_pin, LOW);
-      ALARM_PRINT( Serial.println("Buzzer OFF"); )
-      alarm_time = 0;
-      alarm_triggered = false;
-    }
-  }
-  else {
-    digitalWrite(BUZZER_pin, LOW);
-    alarm_time = 0;
   }
 
   gprs_checkPowerUp_task++;
