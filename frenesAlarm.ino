@@ -11,7 +11,7 @@
 #define GSM_RX_pin    15
 #define GSM_POWER_pin 9
 
-#define CMD_pin 16
+#define CMD_pin 19
 
 /* *****************************
  *  Global variables
@@ -65,7 +65,7 @@ void gprsDisablePrint(int arg_cnt, char **args) { alarm_printIsEnabled = false; 
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Mika Alarm Starting...");
+  Serial.println("Frenes Alarm Starting...");
 
   /* ****************************
    *  Pin configuration
@@ -103,11 +103,11 @@ void setup() {
   cmdAdd("gprsDisablePrint", "Disable print in GPRS lib", gprsDisablePrint);
   cmdAdd("help", "List commands", cmdList);
 
-  Serial.println("Mika Alarm Init done");
+  Serial.println("Frenes Alarm Init done");
 }
 
 void loop() {
-  if(LOW == digitalRead(CMD_pin)) {
+  if(HIGH == digitalRead(CMD_pin)) {
     if(cmd_nb < CMD_NB_MAX) { cmd_nb++; }
   }
   else {
@@ -118,13 +118,14 @@ void loop() {
   }
   else {
     cmd_current = false;
+    cmd_previous = false;
   }
 
   if(true == cmd_current) {
     if(false == cmd_previous) {
       ALARM_PRINT( Serial.println("Alarm ON"); )
       ALARM_PRINT( Serial.print("Sending SMS..."); )
-      if(true == gprs.sendSMS("0602732751", msg)) {
+      if(true == gprs.sendSMS("+33689350159", "Alarme Frenes !")) {
         ALARM_PRINT( Serial.println("OK"); )
       }
       else {
