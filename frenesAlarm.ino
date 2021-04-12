@@ -7,8 +7,8 @@
  */
 #define LED_pin 13
 
-#define GSM_TX_pin    14
-#define GSM_RX_pin    15
+#define GSM_TX_pin    16
+#define GSM_RX_pin    17
 #define GSM_POWER_pin 9
 
 #define CMD_pin 19
@@ -17,7 +17,7 @@
  *  Global variables
  * *****************************
  */
-GPRS gprs(&Serial3, 19200);
+GPRS gprs(&Serial2, 19200);
 uint32_t gprs_checkPowerUp_task = 0;
 uint32_t gprs_checkPowerUp_counter = 0;
 
