@@ -22,7 +22,7 @@ uint32_t gprs_checkPowerUp_task = 0;
 uint32_t gprs_checkPowerUp_counter = 0;
 
 #define CMD_NB_MAX 500
-uint16_t cmd_nb = 0;
+uint16_t cmd_nb = CMD_NB_MAX;
 bool cmd_current = false;
 bool cmd_previous = false;
 
@@ -33,7 +33,7 @@ bool cmd_previous = false;
 
 bool alarm_printIsEnabled  = true;
 #define ALARM_PRINT(m)  if(true == alarm_printIsEnabled) { m }
-#define MSG_ALERT "Alerte ! Alarme declanchee: "
+#define MSG_ALERT "Alerte FRENES ! Alarme declenchee"
 
 /* *****************************
  *  Command lines funstions
@@ -107,13 +107,13 @@ void setup() {
 }
 
 void loop() {
-  if(HIGH == digitalRead(CMD_pin)) {
-    if(cmd_nb < CMD_NB_MAX) { cmd_nb++; }
-  }
-  else {
+  if(LOW == digitalRead(CMD_pin)) {
     if(0 < cmd_nb) { cmd_nb--; }
   }
-  if(cmd_nb > CMD_NB_MAX / 2) {
+  else {
+    if(cmd_nb < CMD_NB_MAX) { cmd_nb++; }
+  }
+  if(cmd_nb < CMD_NB_MAX / 2) {
     cmd_current = true;
   }
   else {
@@ -125,7 +125,21 @@ void loop() {
     if(false == cmd_previous) {
       ALARM_PRINT( Serial.println("Alarm ON"); )
       ALARM_PRINT( Serial.print("Sending SMS..."); )
-      if(true == gprs.sendSMS("+33689350159", "Alarme Frenes !")) {
+      if(true == gprs.sendSMS("+33689350159", MSG_ALERT)) {
+        ALARM_PRINT( Serial.println("OK"); )
+      }
+      else {
+        ALARM_PRINT( Serial.println("ERROR"); )
+      }
+      ALARM_PRINT( Serial.print("Sending SMS..."); )
+      if(true == gprs.sendSMS("+33676970721", MSG_ALERT)) {
+        ALARM_PRINT( Serial.println("OK"); )
+      }
+      else {
+        ALARM_PRINT( Serial.println("ERROR"); )
+      }
+      ALARM_PRINT( Serial.print("Sending SMS..."); )
+      if(true == gprs.sendSMS("+33685561909", MSG_ALERT)) {
         ALARM_PRINT( Serial.println("OK"); )
       }
       else {
@@ -137,7 +151,7 @@ void loop() {
 
   gprs_checkPowerUp_task++;
   /* Check GPRS power every 10 seconds */
-  if(100000 < gprs_checkPowerUp_task) {
+  if(10000 < gprs_checkPowerUp_task) {
     /* Initialiaze counter for the new cycle */
     gprs_checkPowerUp_task=0;
     /* Power Up cycle */
@@ -147,8 +161,9 @@ void loop() {
     ALARM_PRINT( Serial.print("Checking GPRS signal strength..."); )
     int signalStrengthValue = 0;
     if(true == gprs.getSignalStrength(&signalStrengthValue)) {
+      ALARM_PRINT( Serial.print(signalStrengthValue, DEC); )
       gprs_checkPowerUp_counter = 0;
-      ALARM_PRINT( Serial.println("OK"); )
+      ALARM_PRINT( Serial.println("...OK"); )
     }
     else {
       ALARM_PRINT( Serial.println("ERROR"); )
