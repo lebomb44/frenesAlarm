@@ -117,6 +117,9 @@ void loop() {
     cmd_current = true;
   }
   else {
+    if(true == cmd_previous) {
+      ALARM_PRINT( Serial.println("Alarm OFF"); )
+    }
     cmd_current = false;
     cmd_previous = false;
   }
